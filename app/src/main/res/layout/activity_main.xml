@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:paddingTop="48dp">
 
         <TextView
             android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text= "Lingo"
-            android:textStyle="bold"
+            android:layout_marginBottom="16dp"
+            android:text="Lingo"
             android:textSize="24sp"
-            android:layout_marginBottom="16dp"/>
+            android:textStyle="bold" />
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/flashcard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -36,9 +41,9 @@
                     android:id="@+id/flashcard_front"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
                     android:gravity="center"
-                    android:minHeight="220dp">
+                    android:minHeight="220dp"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/frontWord"
@@ -53,7 +58,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Como estás?"
+                        android:text="Como estas?"
                         android:textSize="20sp" />
 
                 </LinearLayout>
@@ -62,9 +67,9 @@
                     android:id="@+id/flashcardBack"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
                     android:gravity="center"
                     android:minHeight="220dp"
+                    android:orientation="vertical"
                     android:visibility="gone">
 
                     <TextView
@@ -84,7 +89,19 @@
                         android:textSize="20sp" />
 
                 </LinearLayout>
+
             </FrameLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/startQuizBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Start Quiz"
+            android:textColor="@android:color/white"
+            app:backgroundTint="#6A4CAF"
+            app:cornerRadius="24dp" />
+
     </LinearLayout>
 </ScrollView>
