@@ -19,6 +19,7 @@ class QuizActivity : ComponentActivity() {
     private var currentQuestionIndex = 0
     private var score = 0
     private var answered = false
+    private var progressSaved = false
 
     private lateinit var questions: List<String>
     private lateinit var choices: List<List<String>>
@@ -84,7 +85,12 @@ class QuizActivity : ComponentActivity() {
 
         choices = listOf(
             listOf("Hello", "Goodbye", "Thanks", "Please"),
-            listOf("When greeting someone", "When going to sleep", "When saying sorry", "When saying thank you"),
+            listOf(
+                "When greeting someone",
+                "When going to sleep",
+                "When saying sorry",
+                "When saying thank you"
+            ),
             listOf("Hello", "Water", "Book", "School"),
             listOf("Greeting someone", "Asking for food", "Saying goodbye", "Talking about time"),
             listOf(translation, "Chair", "Window", "Pencil")
@@ -108,7 +114,8 @@ class QuizActivity : ComponentActivity() {
         questionLabel.text = "Question ${currentQuestionIndex + 1} of ${questions.size}"
         questionText.text = questions[currentQuestionIndex]
         resultText.text = ""
-        nextBtn.text = if (currentQuestionIndex == questions.lastIndex) "Show Score" else "Next Question"
+        nextBtn.text =
+            if (currentQuestionIndex == questions.lastIndex) "Show Score" else "Next Question"
 
         for (i in optionButtons.indices) {
             val button = optionButtons[i]
@@ -172,11 +179,16 @@ class QuizActivity : ComponentActivity() {
         val passedQuiz = score == questions.size
 
         if (passedQuiz) {
+            if (!progressSaved) {
+                saveProgress()
+                progressSaved = true
+            }
+
             resultText.text = "Perfect score. Tap Finish to go back."
             resultText.setTextColor(0xFF2E7D32.toInt())
         } else {
-            resultText.text = "You need a perfect score to finish. Tap Try Again to redo the quiz."
-            resultText.setTextColor(0xFFC62828.toInt())
+        resultText.text = "You need a perfect score to finish. Tap Try Again to redo the quiz."
+        resultText.setTextColor(0xFFC62828.toInt())
         }
 
         // Hides the answer buttons after the quiz is done
@@ -205,6 +217,7 @@ class QuizActivity : ComponentActivity() {
         currentQuestionIndex = 0
         score = 0
         answered = false
+        progressSaved = false
 
         for (button in optionButtons) {
             button.alpha = 1f
@@ -240,6 +253,30 @@ class QuizActivity : ComponentActivity() {
         button.setTextColor(0xFF4B2E83.toInt())
     }
 
+    private fun saveProgress() {
+        val prefs = getSharedPreferences("progress", MODE_PRIVATE)
+
+        val quizzesCompleted = prefs.getInt("quizzesCompleted", 0) + 1
+        val today = System.currentTimeMillis() / 86400000L
+        val lastStudyDay = prefs.getLong("last_Study_Day", -1L)
+        var streakDays = prefs.getInt("streakDays", 0)
+
+        streakDays = when {
+            lastStudyDay == -1L -> 1
+            today == lastStudyDay -> streakDays.coerceAtLeast(1)
+            today == lastStudyDay + 1 -> streakDays + 1
+            else -> 1
+        }
+
+        prefs.edit()
+            .putInt("quizzesCompleted", quizzesCompleted)
+            .putInt("lastScore", score)
+            .putInt("lastTotalQuestions", questions.size)
+            .putLong("lastStudyDay", today)
+            .putInt("streakDays", streakDays)
+            .apply()
+    }
+
     companion object {
         const val EXTRA_FLASHCARD_WORD = "extra_flashcard_word"
         const val EXTRA_FLASHCARD_TRANSLATION = "extra_flashcard_translation"
@@ -247,3 +284,4 @@ class QuizActivity : ComponentActivity() {
         const val EXTRA_TRANSLATED_SENTENCE = "extra_translated_sentence"
     }
 }
+

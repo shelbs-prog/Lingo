@@ -22,7 +22,10 @@ class MainActivity : ComponentActivity() {
 
     private var showingFront = true
 
-    // Loading activity_main.xml
+    private lateinit var progressCompleted: TextView
+    private lateinit var progressLastScore: TextView
+    private lateinit var progressStreak: TextView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +33,7 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
 
 
-    // Connecting Kotlin variables to the XML views
+        // Connecting Kotlin variables to the XML views
         val startQuizBtn = findViewById<MaterialButton>(R.id.startQuizBtn)
         val aiBtn = findViewById<MaterialButton>(R.id.generateExampleBtn)
         val aiCard = findViewById<MaterialCardView>(R.id.aiExampleCard)
@@ -47,14 +50,25 @@ class MainActivity : ComponentActivity() {
         val flashcardFront = findViewById<View>(R.id.flashcard_front)
         val flashcardBack = findViewById<View>(R.id.flashcardBack)
 
-        // Starts quiz when quizbutton is clicked
+        progressCompleted = findViewById(R.id.progressCompleted)
+        progressLastScore = findViewById(R.id.progressLastScore)
+        progressStreak = findViewById(R.id.progressStreak)
+        updateProgress()
+
+
 
         startQuizBtn.setOnClickListener {
             val quizIntent = Intent(this, QuizActivity::class.java)
             quizIntent.putExtra(QuizActivity.EXTRA_FLASHCARD_WORD, frontWord.text.toString())
             quizIntent.putExtra(QuizActivity.EXTRA_FLASHCARD_TRANSLATION, backWord.text.toString())
-            quizIntent.putExtra(QuizActivity.EXTRA_FLASHCARD_SENTENCE, frontSentence.text.toString())
-            quizIntent.putExtra(QuizActivity.EXTRA_TRANSLATED_SENTENCE, backSentence.text.toString())
+            quizIntent.putExtra(
+                QuizActivity.EXTRA_FLASHCARD_SENTENCE,
+                frontSentence.text.toString()
+            )
+            quizIntent.putExtra(
+                QuizActivity.EXTRA_TRANSLATED_SENTENCE,
+                backSentence.text.toString()
+            )
             startActivity(quizIntent)
         }
 
@@ -79,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 return@setOnClickListener
             }
 
-                // Thread allows for increased app stability.
+            // Thread allows for increased app stability.
             Thread {
 
                 // Connects to OpenAI's endpoint
@@ -94,7 +108,10 @@ class MainActivity : ComponentActivity() {
 
 
                     // API Authorization
-                    connection.setRequestProperty("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
+                    connection.setRequestProperty(
+                        "Authorization",
+                        "Bearer ${BuildConfig.OPENAI_API_KEY}"
+                    )
 
                     // Notifies the service of the incoming format
                     connection.setRequestProperty("Content-Type", "application/json")
@@ -113,7 +130,7 @@ class MainActivity : ComponentActivity() {
 
                     //  Creates the JSON object for travel
 
-                     val body = JSONObject()
+                    val body = JSONObject()
 
                     // Adds the Model and INPUT into the JSON
                     // Think of this as
@@ -124,7 +141,7 @@ class MainActivity : ComponentActivity() {
                     body.put("model", BuildConfig.OPENAI_MODEL)
                     body.put("input", prompt)
 
-                    // This is the part that actutally sends the JSON and proceeds into it's conversion
+                    // This is the part that actually sends the JSON and proceeds into it's conversion
 
                     OutputStreamWriter(connection.outputStream).use { writer ->
                         writer.write(body.toString())
@@ -132,13 +149,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // This gets the HTTP status code
-                    // Think of {"200 = sucess"} {"401 = unauth / bad key"} {"429 = rate limit"}
+                    // Think of {"200 = success"} {"401 = unauth / bad key"} {"429 = rate limit"}
 
                     val responseCode = connection.responseCode
 
                     // Chooses which stream to read from
 
-                    val stream = if (responseCode in 200..299) connection.inputStream else connection.errorStream
+                    val stream =
+                        if (responseCode in 200..299) connection.inputStream else connection.errorStream
 
                     // Reads line by line to return the final full string
 
@@ -156,7 +174,8 @@ class MainActivity : ComponentActivity() {
 
                     if (responseCode !in 200..299) {
                         runOnUiThread {
-                            aiStatus.text = "The AI request failed. Check your API key and internet connection."
+                            aiStatus.text =
+                                "The AI request failed. Check your API key and internet connection."
                             aiBtn.isEnabled = true
                         }
                         return@Thread
@@ -218,7 +237,8 @@ class MainActivity : ComponentActivity() {
                             aiSpanish.text = "Spanish: $spanishLine"
                             aiEnglish.text = "English: $englishLine"
                         } else {
-                            aiStatus.text = "The AI response came back, but it was not in the expected format."
+                            aiStatus.text =
+                                "The AI response came back, but it was not in the expected format."
                             aiSpanish.text = ""
                             aiEnglish.text = ""
                         }
@@ -247,5 +267,33 @@ class MainActivity : ComponentActivity() {
                 flashcardBack.visibility = View.VISIBLE
             }
         }
+    }
+
+    private fun updateProgress() {
+        val prefs = getSharedPreferences("progress", MODE_PRIVATE)
+
+        val quizzesCompleted = prefs.getInt("quizzesCompleted", 0)
+        val lastScore = prefs.getInt("lastScore", 0)
+        val lastTotalQuestions = prefs.getInt("lastTotalQuestions", 0)
+        val streakDays = prefs.getInt("streakDays", 0)
+
+        progressCompleted.text = "Quizzes completed: $quizzesCompleted"
+
+        progressLastScore.text =
+            if (quizzesCompleted == 0 || lastTotalQuestions == 0) {
+                "Last score: No quiz yet"
+            } else {
+                val percent = (lastScore * 100) / lastTotalQuestions
+                "Last score: $percent%"
+            }
+
+        progressStreak.text =
+            "Current Streak: $streakDays day" + if (streakDays == 1) "" else "s"
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateProgress()
     }
 }
