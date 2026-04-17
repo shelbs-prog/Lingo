@@ -24,10 +24,14 @@ class QuizActivity : ComponentActivity() {
     private lateinit var choices: List<List<String>>
     private lateinit var correctAnswers: List<String>
 
+    // Loading activity_quiz.xml
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_quiz)
+
+        // Connecting Kotlin variables to the XML views
 
         quizHeader = findViewById(R.id.quizHeader)
         questionLabel = findViewById(R.id.questionLabel)
@@ -40,10 +44,13 @@ class QuizActivity : ComponentActivity() {
             findViewById(R.id.option3),
             findViewById(R.id.option4)
         )
-
+        // Creates the quiz data
         createQuizData()
+
+        // Shows the first question
         showQuestion()
 
+        // Moves through the quiz when next button is clicked
         nextBtn.setOnClickListener {
             if (!answered) {
                 resultText.text = "Pick an answer first."
@@ -60,6 +67,8 @@ class QuizActivity : ComponentActivity() {
             }
         }
     }
+
+    // Creates the lists for questions answer choices and correct answers
 
     private fun createQuizData() {
         val word = intent.getStringExtra(EXTRA_FLASHCARD_WORD) ?: "Hola"
@@ -90,6 +99,9 @@ class QuizActivity : ComponentActivity() {
         )
     }
 
+
+    // Shows the current question and answer choices
+
     private fun showQuestion() {
         answered = false
         quizHeader.text = "Quick Quiz"
@@ -103,23 +115,30 @@ class QuizActivity : ComponentActivity() {
             button.text = choices[currentQuestionIndex][i]
             button.isEnabled = true
             resetButtonStyle(button)
+
+            // Checks answer when one of the options is clicked
+
             button.setOnClickListener {
                 checkAnswer(button.text.toString(), button)
             }
         }
     }
 
+    // Checks if the selected answer is correct or incorrect
     private fun checkAnswer(selectedAnswer: String, selectedButton: MaterialButton) {
         if (answered) return
 
         answered = true
         val correctAnswer = correctAnswers[currentQuestionIndex]
 
+        // Disables all buttons after one answer is chosen
         for (button in optionButtons) {
             button.isEnabled = false
         }
 
         if (selectedAnswer == correctAnswer) {
+
+            // Shows correct result and changes selected button color
             score++
             resultText.text = "Correct!"
             resultText.setTextColor(0xFF2E7D32.toInt())
@@ -127,6 +146,7 @@ class QuizActivity : ComponentActivity() {
             selectedButton.strokeColor = ColorStateList.valueOf(0xFF66BB6A.toInt())
             selectedButton.setTextColor(0xFF2E7D32.toInt())
         } else {
+            // Shows incorrect result and highlights the right answer
             resultText.text = "Incorrect. The correct answer is \"$correctAnswer\"."
             resultText.setTextColor(0xFFC62828.toInt())
             selectedButton.setBackgroundColor(0xFFFFEBEE.toInt())
@@ -143,25 +163,76 @@ class QuizActivity : ComponentActivity() {
         }
     }
 
+
+    // Shows the final score after the quiz is completed
     private fun showFinalScore() {
         quizHeader.text = "Quiz Complete"
         questionLabel.text = "Final Score"
         questionText.text = "You got $score out of ${questions.size} correct."
-        resultText.text = "Tap Finish to go back."
-        resultText.setTextColor(0xFF666666.toInt())
+        val passedQuiz = score == questions.size
 
+        if (passedQuiz) {
+            resultText.text = "Perfect score. Tap Finish to go back."
+            resultText.setTextColor(0xFF2E7D32.toInt())
+        } else {
+            resultText.text = "You need a perfect score to finish. Tap Try Again to redo the quiz."
+            resultText.setTextColor(0xFFC62828.toInt())
+        }
+
+        // Hides the answer buttons after the quiz is done
         for (button in optionButtons) {
             button.isEnabled = false
             button.text = ""
             button.alpha = 0f
         }
 
-        nextBtn.text = "Finish"
+
+        // Finishes the activity if perfect score was reached
+        // Otherwise it restarts the quiz
+
+        nextBtn.text = if (passedQuiz) "Finish" else "Try Again"
         nextBtn.setOnClickListener {
-            finish()
+            if (passedQuiz) {
+                finish()
+            } else {
+                resetQuiz()
+            }
         }
     }
 
+    // Resets quiz progress if the student did not get a perfect score
+    private fun resetQuiz() {
+        currentQuestionIndex = 0
+        score = 0
+        answered = false
+
+        for (button in optionButtons) {
+            button.alpha = 1f
+            button.text = " "
+        }
+
+        // Restarts the next button logic
+        nextBtn.setOnClickListener {
+            if (!answered) {
+                resultText.text = "Pick an answer first."
+                resultText.setTextColor(0xFFC62828.toInt())
+                return@setOnClickListener
+            }
+
+            currentQuestionIndex++
+
+            if (currentQuestionIndex < questions.size) {
+                showQuestion()
+            } else {
+                showFinalScore()
+            }
+        }
+
+        showQuestion()
+    }
+
+
+    // Resets button colors back to default style
     private fun resetButtonStyle(button: MaterialButton) {
         button.alpha = 1f
         button.setBackgroundColor(0xFFFFFFFF.toInt())
